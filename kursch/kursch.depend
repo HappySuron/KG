@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1666340966 source:s:\kg_projects_cb\pr\kursch\main.cpp
+	<iostream>
+	<graphics.h>
+	<winbgim.h>
+	<conio.h>
+	<cmath>
+
