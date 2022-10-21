@@ -122,15 +122,19 @@ void moving(float HPA[AN][AM], float HPB[BN][BM], float dx, float dy, float dz);
                                                                                     // HTC
 
 
-
+void rotating_Both(float HPA[AN][AM], float HPB[BN][BM], float angle, int index);
 void rotating_A(float HPA[AN][AM], float angle, int index);
+void rotating_B(float HPB[BN][BM], float angle, int index);
 // Here index for
 // 1 - x
 // 2 - y
 // 3 - z
 //-----------------------------------------------
 
+
+void increese_decreese_Both(float HPA[AN][AM], float HPB[BN][BM], float K);
 void increese_decreese_A(float HPA[AN][AM], float K);
+void increese_decreese_B(float HPB[AN][AM], float K);
 
 //void find_normals_A(float HP[AN][AM], float NRM[4][5]);
 
@@ -181,21 +185,21 @@ int main(){
                         break;}
             case 'e':  {moving(AFG, BFG, 0, 0, -DZ);
                         break;}
-            case 'o':  {rotating_A(AFG, UG, 1);
+            case 'o':  {rotating_Both(AFG, BFG, UG, 1);
                         break;}
-            case 'u':  {rotating_A(AFG, -UG, 1);
+            case 'u':  {rotating_Both(AFG, BFG, -UG, 1);
                         break;}
-            case 'i':  {rotating_A(AFG, UG, 2);
+            case 'i':  {rotating_Both(AFG, BFG, UG, 2);
                         break;}
-            case 'k':  {rotating_A(AFG, -UG, 2);
+            case 'k':  {rotating_Both(AFG, BFG, -UG, 2);
                         break;}
-            case 'j':  {rotating_A(AFG, UG, 3);
+            case 'j':  {rotating_Both(AFG, BFG, UG, 3);
                         break;}
-            case 'l':  {rotating_A(AFG, -UG, 3);
+            case 'l':  {rotating_Both(AFG, BFG, -UG, 3);
                         break;}
-            case 'z':  {increese_decreese_A(AFG, INC);
+            case 'z':  {increese_decreese_Both(AFG, BFG, INC);
                         break;}
-            case 'c':  {increese_decreese_A(AFG, DEC);
+            case 'c':  {increese_decreese_Both(AFG, BFG, DEC);
                         break;}
             case '1': { AB=0;
                         break;};
@@ -450,6 +454,17 @@ void moving_B(float HPB[BN][BM], float dx, float dy, float dz){
 //=========================Functions of rotation==============================
 //----------------------------------------------------------------------------
 
+void rotating_Both(float HPA[AN][AM], float HPB[BN][BM], float angle, int index){
+    if (AB == 0){
+        rotating_A(HPA, angle, index);
+    //    find_normals_A(HPA, NORMALS);
+    }else{
+         rotating_B(HPB, angle, index);
+    }
+}
+
+
+
 void rotating_A(float HPA[AN][AM], float angle, int index){
     float rotatingM[AM][AM];
     float rotatingM_X[AM][AM] = {
@@ -532,6 +547,88 @@ void rotating_A(float HPA[AN][AM], float angle, int index){
     find_center_A(HPA);
 }
 
+void rotating_B(float HPB[BN][BM], float angle, int index){
+    float rotatingM[BM][BM];
+    float rotatingM_X[BM][BM] = {
+    {1, 0, 0, 0},
+    {0, cos(angle), sin(angle), 0},
+    {0, -sin(angle), cos(angle), 0},
+    {0, 0, 0, 1}    };
+    float rotatingM_Y[BM][BM] = {
+    {cos(angle), 0, -sin(angle), 0},
+    {0, 1, 0, 0},
+    {sin(angle), 0, cos(angle), 0},
+    {0, 0, 0, 1}    };
+    float rotatingM_Z[BM][BM] = {
+    {cos(angle), sin(angle), 0, 0},
+    {-sin(angle), cos(angle), 0, 0},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}    };
+    for (int i=0; i < BM; i++){
+        for (int j=0; j< BM; j++){
+            if (index ==1)rotatingM[i][j] = rotatingM_X[i][j];
+            if (index ==2)rotatingM[i][j] = rotatingM_Y[i][j];
+            if (index ==3)rotatingM[i][j] = rotatingM_Z[i][j];
+        }
+    }
+
+    float HelperMatrix[BN][BM];
+
+    float HPB_copy[BN][BM];
+    for (int i =0; i <BN; i++){
+        for(int j=0; j< BM; j++){
+            HPB_copy[i][j] = HPB[i][j];
+        }
+    }
+
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            HelperMatrix[i][j] = HPB_copy[i][j];
+        }
+    }
+
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HelperMatrix[i][j] = HPB_copy[i][j]- BXC;
+            if (j == 1) HelperMatrix[i][j] = HPB_copy[i][j]- BYC;
+            if (j == 2) HelperMatrix[i][j] = HPB_copy[i][j]- BZC;
+        }
+    }
+
+
+    multing_2(HelperMatrix, rotatingM);
+
+
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HPB_copy[i][j] = HelperMatrix[i][j] + BXC;
+            if (j == 1) HPB_copy[i][j] = HelperMatrix[i][j] + BYC;
+            if (j == 2) HPB_copy[i][j] = HelperMatrix[i][j] + BZC;
+        }
+    }
+    for (int i =0; i <BN; i++){
+        if (HPB_copy[i][1] >=0) throw  "under";
+    }
+
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HPB[i][j] = HPB_copy[i][j];
+            if (j == 1) HPB[i][j] = HPB_copy[i][j];
+            if (j == 2) HPB[i][j] = HPB_copy[i][j];
+        }
+    }
+
+    find_center_B(HPB);
+}
+
 //----------------------------------------------------------------------------
 //============================================================================
 //----------------------------------------------------------------------------
@@ -540,7 +637,18 @@ void rotating_A(float HPA[AN][AM], float angle, int index){
 //=========================Functions of increase decrease=====================
 //----------------------------------------------------------------------------
 
+void increese_decreese_Both(float HPA[AN][AM], float HPB[BN][BM], float K){
+    if (AB == 0){
+        increese_decreese_A(HPA,K);
+    //    find_normals_A(HPA, NORMALS);
+    }else{
+         increese_decreese_B(HPB,K);
+    }
+}
+
 void increese_decreese_A(float HPA[AN][AM], float K){
+
+
     float incM[AM][AM] = { {K, 0, 0,0}, {0, K, 0,0}, {0, 0, K, 0}, {0,0,0,1} };
     float HelperMatrix[AN][AM];
 
@@ -598,6 +706,64 @@ void increese_decreese_A(float HPA[AN][AM], float K){
     find_center_A(HPA);
 }
 
+void increese_decreese_B(float HPB[AN][AM], float K){
+    float incM[BM][BM] = { {K, 0, 0,0}, {0, K, 0,0}, {0, 0, K, 0}, {0,0,0,1} };
+    float HelperMatrix[BN][BM];
+
+
+    float HPB_copy[BN][BM];
+    for (int i =0; i <BN; i++){
+        for(int j=0; j< BM; j++){
+            HPB_copy[i][j] = HPB[i][j];
+        }
+    }
+
+
+     for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            HelperMatrix[i][j] = HPB_copy[i][j];
+        }
+    }
+
+     for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HelperMatrix[i][j] = HPB_copy[i][j]- BXC;
+            if (j == 1) HelperMatrix[i][j] = HPB_copy[i][j]- BYC;
+            if (j == 2) HelperMatrix[i][j] = HPB_copy[i][j]- BZC;
+        }
+    }
+    multing_2(HelperMatrix, incM);
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HPB_copy[i][j] = HelperMatrix[i][j] + BXC;
+            if (j == 1) HPB_copy[i][j] = HelperMatrix[i][j] + BYC;
+            if (j == 2) HPB_copy[i][j] = HelperMatrix[i][j] + BZC;
+        }
+    }
+
+    for (int i =0; i <BN; i++){
+        if (HPB_copy[i][1] >=0) throw  "under";
+    }
+
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            if (j == 0) HPB[i][j] = HPB_copy[i][j];
+            if (j == 1) HPB[i][j] = HPB_copy[i][j];
+            if (j == 2) HPB[i][j] = HPB_copy[i][j];
+        }
+    }
+
+    find_center_B(HPB);
+}
+
 //----------------------------------------------------------------------------
 //============================================================================
 //----------------------------------------------------------------------------
@@ -614,9 +780,9 @@ void find_center_A(float HPA[AN][AM]){
 }
 
 void find_center_B(float HPB[BN][BM]){
-    AXC = ((HPB[1][0] + HPB[2][0] + HPB[3][0])/3 + HPB[0][0])/2;
-    AYC = ((HPB[1][1] + HPB[2][1] + HPB[3][1])/3 + HPB[0][1])/2;
-    AZC = ((HPB[1][3] + HPB[2][3] + HPB[3][3])/3 + HPB[0][3])/2;
+    BXC = ((HPB[1][0] + HPB[2][0] + HPB[3][0])/3 + HPB[0][0])/2;
+    BYC = ((HPB[1][1] + HPB[2][1] + HPB[3][1])/3 + HPB[0][1])/2;
+    BZC = ((HPB[1][3] + HPB[2][3] + HPB[3][3])/3 + HPB[0][3])/2;
 }
 
 /*
