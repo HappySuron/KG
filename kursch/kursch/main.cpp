@@ -79,6 +79,9 @@
 #define INC 1.4     // or decrease
 #define DEC 0.8
 
+#define SELFSHADOW 0
+#define BORDERLINE 0
+
 const int AN =5;       // N - amount of conors
 const int AM =4;        // M - x,y,z,1
 
@@ -92,14 +95,26 @@ float ABXC, ABYC, ABZC;
 
 using namespace std;
 
+
 float PROJECTION[AM][AM] =
     {{0.7, -0.4, 0, 0},
     {0, 0.8, 0, 0},
     {-0.7, -0.4, 1, 0},
-    {0, 0, 0, 1}};          // The matrix of the projection In this case izometria, at least seems to be
+    {0, 0, 0, 1}};
 
+    float PROJECTION2[AM][AM] =
+    {{1.42, 0.714, 0, 0},
+    {0, 1.25, 0, 0},
+    {1, 1, 1, 0},
+    {0, 0, 0, 1}};         // The matrix of the projection In this case izometria, at least seems to be
 
-
+/*
+float PROJECTION[AM][AM] =
+    {{1, 0, 0, 0},
+    {0, 1, 0, 0},
+    {0, 0, 0, 0},
+    {0, 0, 0, 1}};
+*/
 
     int AB=0; // this is the flag to see what figure we are working with right now
 
@@ -117,7 +132,10 @@ void Draw_Polly(); // to draw the floor, where shadow should be
 void multing_1(float HP[AN][AM], float Mult[AM][AM]);
 void multing_2(float HP[AM][AM], float Mult[AM][AM]); // Not sure that AM is correct to be used here maybe to change
 void multing_3(float HP[3], float Mult[3][3]);
-
+void multing_4(float LG[1][4], float NRM[4][9], float RES[1][9]);
+void multing_5 (float FIRST_MT[4][4], float NRM[4][9], float NRM_NEW[4][9]);
+void multing_6(float F[1][4], float SND[4][5], float RES[1][4]);
+void multing_7(float F[1][4], float SND[4][4], float RES[1][4]);
 
 void find_center_A(float HPA[AN][AM]);
 void find_center_B(float HPB[BN][BM]);
@@ -153,11 +171,37 @@ void system_solution(float Koordi[3][3], float MFR[3]);
 void find_normals(float HPA[AN][AM], float HPB[BN][BM], float NRM[4][9]);
 
 
+
+
+//
+void DRAW_figureA_0(float HP[AN][AM], int COl);
+void DRAW_figureA_1(float HP[AN][AM], int COl);
+void DRAW_figureA_2(float HP[AN][AM], int COl);
+void DRAW_figureA_3(float HP[AN][AM], int COl);
+void DRAW_figureA_4(float HP[AN][AM], int COl);
+
+void DRAW_figureB_0(float HP[BN][BM], int COl);
+void DRAW_figureB_1(float HP[BN][BM], int COl);
+void DRAW_figureB_2(float HP[BN][BM], int COl);
+void DRAW_figureB_3(float HP[BN][BM], int COl);
+
+
+void Painting_the_figures(float HPA[AN][AM], float HPB[BN][BM], float CAMxNRM_HP[1][9], float LGHxNRM_HP[1][9]);
+void Painting_the_figures_2(float HPA[AN][AM], float HPB[BN][BM], float CAMxNRM_HP[1][9], float LGHxNRM_HP[1][9]);
+
+
 float NORMALS[4][9];
-float LIGHT = (0, -1000, 0, 1);
-float CAMERA = (0,0, 500, 1);
+float NEW_NORMALS[4][9];
+float LIGHT[1][4] = {{-100, 5000, -100, 1}};
+//float CAMERA[1][4] = {{448, -360, -320, 1}};
+float CAMERA[1][4] = {{-1000, -1000, -1000, 1}};
+
+float LIGHTxNORMALS[1][9];
+float CAMERAxNORMALS[1][9];
 
 int main(){
+
+    cout.precision(2);
     int gd = DETECT, gm;
     initgraph(&gd, &gm, (char*)"");
 
@@ -188,13 +232,6 @@ int main(){
     while(true){
 
 
-      //  find_normals(AFG, BFG, NORMALS);
-      //  for (int i =0; i <4; i++){
-        //     for (int j=0; j < 9; j++){
-        //        cout  << NORMALS[i][j]<<'\t';
-        //    }
-        //    cout << endl;
-        //}
 
         c = _getch();
         try{
@@ -207,7 +244,7 @@ int main(){
                         break;}
             case 'd':  {moving(AFG, BFG, DX, 0,0);
                         break;}
-                        case 'q':  {moving(AFG, BFG, 0, 0, DZ);
+            case 'q':  {moving(AFG, BFG, 0, 0, DZ);
                         break;}
             case 'e':  {moving(AFG, BFG, 0, 0, -DZ);
                         break;}
@@ -234,6 +271,8 @@ int main(){
             case '3': { AB=2;
                         break;}
         }
+
+        //////////////////////////////////////////////////////////
         setcolor(BLACK);
         setfillstyle(SOLID_FILL,WHITE);
         bar(0,0,640,480);
@@ -241,7 +280,84 @@ int main(){
         }catch (char const* err){
         // cout << err;
         }
+        find_center_A(AFG);
+        find_center_B(BFG);
+        find_normals(AFG, BFG, NORMALS);
+        /*
+        for (int i =0; i <4; i++){
+             for (int j=0; j < 9; j++){
+                cout  << NORMALS[i][j]<<'\t';
+            }
+            cout << endl;
+        }*/
+
+        multing_4(LIGHT, NORMALS, LIGHTxNORMALS);
+/*
+        cout << endl;
+        cout << endl;
+        for (int i =0; i <9; i++){
+            cout  << LIGHTxNORMALS[0][i] << " ";
+        }cout << endl;
+
+
+
+
+        cout <<endl << "************************AG" << endl;
+        for (int i =0; i <5; i++){
+        for (int j=0; j <4; j++){
+            cout << AFG[i][j] << '\t';
+        }
+        cout <<endl;
+        }
+
+         cout <<endl << "************************NRM" << endl;
+        for (int i =0; i <4; i++){
+        for (int j=0; j <9; j++){
+            cout << NORMALS[i][j] << '\t';
+        }
+        cout <<endl;
+        }
+
+
+        //multing_5(PROJECTION2, NORMALS, NEW_NORMALS);
+
+        cout <<endl << "************************NNMRM" << endl;
+        for (int i =0; i <4; i++){
+        for (int j=0; j <9; j++){
+            cout << NEW_NORMALS[i][j] << '\t';
+        }
+        cout <<endl;
+        }
+*/
+        multing_4(CAMERA, NORMALS, CAMERAxNORMALS);
+
+
+        //cout << endl;
+       // cout << endl;
+       /*
+        for (int i =0; i <9; i++){
+                cout << "CAMERAxNORMALS" << endl;
+            cout  << CAMERAxNORMALS[0][i] << " ";
+        }cout << endl;
+        */
+        cout << "sdassafdasdf" << (AXC + AYC + AZC) << " " <<(BXC + BYC + BZC) << endl;
+        if ((AXC + AYC + AZC) < (BXC + BYC + BZC)){
+        Painting_the_figures(AFG, BFG, CAMERAxNORMALS, LIGHTxNORMALS);
+        Painting_the_figures_2(AFG, BFG, CAMERAxNORMALS, LIGHTxNORMALS);
+        }else {
+        Painting_the_figures_2(AFG, BFG, CAMERAxNORMALS, LIGHTxNORMALS);
+        Painting_the_figures(AFG, BFG, CAMERAxNORMALS, LIGHTxNORMALS);
+        }
+
+
+
+
+
+        if(BORDERLINE == 1){
+        Draw_FigureA(AFG);
+        Draw_FigureB(BFG);}
     }
+
     getch();
     closegraph();
 }
@@ -331,8 +447,8 @@ void Draw_Polly(){
         }
             cout <<endl;
     }
-        */
 
+*/
     int poly[10];                           // | Draw the figure
     poly[0] = Polly[0][0]+SHIFT;              // | the square
     poly[1] = Polly[0][1]+SHIFT;              // | before fillpoly make it
@@ -432,6 +548,65 @@ void multing_3(float HP[3], float Mult[3][3])    // Is used in system_solution
     }
 }
 
+void multing_4 (float LG[1][4], float NRM[4][9], float RES[1][9]){
+    for (int i = 0; i < 9; i++) {
+            RES[0][i] =0;
+        }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 9; j++) {
+            RES[0][j] += LG[0][i] * NRM[i][j];
+        }
+    }
+}
+
+void multing_5 (float FIRST_MT[4][4], float NRM[4][9], float NRM_NEW[4][9]){
+    for (int i =0; i <4; i++)
+        for (int j =0; j <9; j++)
+            NRM_NEW[i][j] =0;
+
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            for (int k = 0; k < 4; k++)
+            {
+            NRM_NEW[i][j] += FIRST_MT[i][k] * NRM[k][j];
+            }
+        }
+    }
+}
+
+void multing_6(float F[1][4], float SND[4][5], float RES[1][5]){
+    for (int i = 0; i < 9; i++) {
+            RES[0][i] =0;
+        }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 5; j++) {
+            RES[0][j] += F[0][i] * SND[i][j];
+        }
+    }
+}
+
+void multing_7(float F[1][4], float SND[4][4], float RES[1][4]){
+    for (int i = 0; i < 4; i++) {
+            RES[0][i] =0;
+        }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            RES[0][j] += F[0][i] * SND[i][j];
+            //cout << RES[0][j] << " ";
+        }
+    }
+
+    for (int j = 0; j < 4; j++) {
+            cout << RES[0][j] << " ";
+        }
+}
+
+
+
+
 //----------------------------------------------------------------------------
 //============================================================================
 //----------------------------------------------------------------------------
@@ -450,7 +625,8 @@ void moving(float HPA[AN][AM], float HPB[BN][BM], float dx, float dy, float dz){
     else{
         moving_Both_func(HPA, HPB, dx, dy, dz);
     }
-
+    find_center_A(HPA);
+    find_center_B(HPB);
 }
 
 
@@ -1253,7 +1429,16 @@ void system_solution(float Koordi[3][3], float MFR[]) {
     float delta2 = (z1 * y2 * x3 + z2 * y3 * x1 + z3 * y1 * x2);
     float delta = delta1 - delta2;
     cout << "--------------" << delta << endl;
-    //std::cout << delta << std::endl << std::endl;
+
+    std::cout <<"delta " << delta << std::endl << std::endl;
+
+    if (delta ==0){
+    delta1 = ((x1+ EPS) * y2 * z3 + x2 * y3 * z1 + x3 * y1 * z2);
+    delta2 = (z1 * y2 * x3 + z2 * y3 * x1 + z3 * y1 * x2);
+    delta = delta1 - delta2;
+    }
+    std::cout <<"delta new " << delta << std::endl << std::endl;
+
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             std::cout << Koordi[i][j] << " ";
@@ -1302,12 +1487,16 @@ void system_solution(float Koordi[3][3], float MFR[]) {
 void find_normals(float HPA[AN][AM], float HPB[BN][BM], float NRM[4][9]){
     float KoordMatrix[3][3]; // her we will store koords
     float ResultMatrix[3] = {-1, -1, -1}; //result will be stored here
+
+    for (int i=0; i<9; i++) NRM[3][i]=1;
     //---A-0---
     for (int j=0; j< 3; j++) KoordMatrix[0][j] = HPA[1][j]; // --1
     for (int j=0; j< 3; j++) KoordMatrix[1][j] = HPA[2][j]; // --2
     for (int j=0; j< 3; j++) KoordMatrix[2][j] = HPA[3][j]; // --3
     system_solution(KoordMatrix, ResultMatrix);
     for (int i=0; i <3; i++) NRM[i][0] = ResultMatrix[i];
+
+
 
     //--A-1---
     for (int j=0; j< 3; j++) KoordMatrix[0][j] = HPA[0][j]; // --0
@@ -1364,6 +1553,454 @@ void find_normals(float HPA[AN][AM], float HPB[BN][BM], float NRM[4][9]){
 
     system_solution(KoordMatrix, ResultMatrix);
     for (int i=0; i <3; i++) NRM[i][8] = ResultMatrix[i];
+
+    //////////////////   ITSHERE
+
+    float RES[1][5];
+    float HELPER_MATRIX_FOR_PIRAMID[4][5];
+    for (int i =0; i <4; i++){
+        for (int j=0; j < 5; j++)
+        HELPER_MATRIX_FOR_PIRAMID[i][j] = NRM[i][j];
+    }
+    float TOCHKA_OCHKA[1][4];
+    TOCHKA_OCHKA[0][0] = AXC;
+    TOCHKA_OCHKA[0][1] = AYC;
+    TOCHKA_OCHKA[0][2] = AZC;
+    TOCHKA_OCHKA[0][3] = 1;
+
+
+    cout << "safdsadfsdafadsf" << endl <<  TOCHKA_OCHKA[0][0] << " " << " " << TOCHKA_OCHKA[0][1] << " " << TOCHKA_OCHKA[0][2] << " "  << TOCHKA_OCHKA[0][3] << endl;
+
+    multing_6(TOCHKA_OCHKA, HELPER_MATRIX_FOR_PIRAMID, RES);
+    for (int i=0;i < 4; i++){
+        for (int j=0; j<5; j++){
+            cout << RES[i][j] << endl;
+            if (RES[i][j] < 0){
+                    cout << endl  << "menshe" << j << endl;
+                for (int k=0; k <4; k++) NRM[k][j] = NRM[k][j]*(-1);
+            }
+        }
+
+    }
+
+    float RES_2[1][4];
+    float HELPER_MATRIX_FOR_PIRAMID_2[4][4];
+    for (int i =0; i <4; i++){
+        for (int j=0; j < 4; j++){
+        HELPER_MATRIX_FOR_PIRAMID_2[i][j] = NRM[i][j+5];
+        cout   << HELPER_MATRIX_FOR_PIRAMID_2[i][j]<<  " ";}
+        cout << endl;
+    }
+
+
+    float TOCHKA_OCHKA_2[1][4];
+    TOCHKA_OCHKA_2[0][0] = BXC;
+    TOCHKA_OCHKA_2[0][1] = BYC;
+    TOCHKA_OCHKA_2[0][2] = BZC;
+    TOCHKA_OCHKA_2[0][3] = 1;
+     cout << "WWWWWWWWWWWWWWWWWWWWWWWWW" << endl <<  TOCHKA_OCHKA_2[0][0] << " " << " " << TOCHKA_OCHKA_2[0][1] << " " << TOCHKA_OCHKA_2[0][2] << " "  << TOCHKA_OCHKA_2[0][3] << endl;
+    multing_7(TOCHKA_OCHKA_2, HELPER_MATRIX_FOR_PIRAMID_2, RES_2);
+
+    for (int i=0;i < 4; i++){
+        for (int j=0; j<4; j++){
+            cout << RES_2[i][j] << endl;
+            if (RES_2[i][j] < 0){
+                    cout << endl  << "menshe" << j+5 << endl;
+                for (int k=0; k <4; k++) NRM[k][j+5] = NRM[k][j+5]*(-1);
+            }
+        }
+    }
+}
+
+
+
+//----------------------------------------------------------------------------
+//========================Painting functions==================================
+//----------------------------------------------------------------------------
+
+//
+// NOt sure if its okay, but feels like i should do
+// all grans in separated func
+//
+
+void DRAW_figureA_0(float HP[AN][AM], int COL){
+    float TDO[AN][AM]; // TecnicallyDrawingOne
+    for (int i = 0; i < AN; i++)
+    {
+        for (int j = 0; j < AM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_1(TDO , PROJECTION);
+    int poly[10];
+    poly[0] = round(TDO[1][0])+SHIFT;    // 1
+    poly[1] = round(TDO[1][1])+SHIFT;
+
+    poly[2] = round(TDO[2][0])+SHIFT;    //2
+    poly[3] = round(TDO[2][1])+SHIFT;
+
+    poly[4] = round(TDO[3][0])+SHIFT;    //3
+    poly[5] = round(TDO[3][1])+SHIFT;
+
+    poly[6] = round(TDO[4][0])+SHIFT;    //4
+    poly[7] = round(TDO[4][1])+SHIFT;
+
+    poly[8] = poly[0];
+    poly[9] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(5,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureA_1(float HP[AN][AM], int COL){
+    float TDO[AN][AM]; // TecnicallyDrawingOne
+    for (int i = 0; i < AN; i++)
+    {
+        for (int j = 0; j < AM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_1(TDO , PROJECTION);
+    int poly[8];
+    poly[0] = round(TDO[0][0])+SHIFT;    // 0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[1][0])+SHIFT;    //1
+    poly[3] = round(TDO[1][1])+SHIFT;
+
+    poly[4] = round(TDO[2][0])+SHIFT;    //2
+    poly[5] = round(TDO[2][1])+SHIFT;
+
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureA_2(float HP[AN][AM], int COL){
+    float TDO[AN][AM]; // TecnicallyDrawingOne
+    for (int i = 0; i < AN; i++)
+    {
+        for (int j = 0; j < AM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_1(TDO , PROJECTION);
+    int poly[10];
+    poly[0] = round(TDO[0][0])+SHIFT;    // 0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[2][0])+SHIFT;    //2
+    poly[3] = round(TDO[2][1])+SHIFT;
+
+    poly[4] = round(TDO[3][0])+SHIFT;    //3
+    poly[5] = round(TDO[3][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureA_3(float HP[AN][AM], int COL){
+    float TDO[AN][AM]; // TecnicallyDrawingOne
+    for (int i = 0; i < AN; i++)
+    {
+        for (int j = 0; j < AM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_1(TDO , PROJECTION);
+    int poly[10];
+    poly[0] = round(TDO[0][0])+SHIFT;    // 0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[3][0])+SHIFT;    //3
+    poly[3] = round(TDO[3][1])+SHIFT;
+
+    poly[4] = round(TDO[4][0])+SHIFT;    //4
+    poly[5] = round(TDO[4][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+
+void DRAW_figureA_4(float HP[AN][AM], int COL){
+    float TDO[AN][AM]; // TecnicallyDrawingOne
+    for (int i = 0; i < AN; i++)
+    {
+        for (int j = 0; j < AM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_1(TDO , PROJECTION);
+    int poly[10];
+    poly[0] = round(TDO[1][0])+SHIFT;    // 1
+    poly[1] = round(TDO[1][1])+SHIFT;
+
+    poly[2] = round(TDO[0][0])+SHIFT;    //0
+    poly[3] = round(TDO[0][1])+SHIFT;
+
+    poly[4] = round(TDO[4][0])+SHIFT;    //4
+    poly[5] = round(TDO[4][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+//
+//
+
+void DRAW_figureB_0(float HP[BN][BM], int COL){
+    float TDO[BN][BM]; // TecnicallyDrawingOne
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_2(TDO , PROJECTION);
+    int poly[8];
+    poly[0] = round(TDO[3][0])+SHIFT;    //3
+    poly[1] = round(TDO[3][1])+SHIFT;
+
+    poly[2] = round(TDO[1][0])+SHIFT;    //1
+    poly[3] = round(TDO[1][1])+SHIFT;
+
+    poly[4] = round(TDO[2][0])+SHIFT;    //2
+    poly[5] = round(TDO[2][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureB_1(float HP[BN][BM], int COL){
+    float TDO[BN][BM]; // TecnicallyDrawingOne
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_2(TDO , PROJECTION);
+    int poly[8];
+    poly[0] = round(TDO[0][0])+SHIFT;    // 0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[1][0])+SHIFT;    //1
+    poly[3] = round(TDO[1][1])+SHIFT;
+
+    poly[4] = round(TDO[2][0])+SHIFT;    //2
+    poly[5] = round(TDO[2][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureB_2(float HP[BN][BM], int COL){
+    float TDO[BN][BM]; // TecnicallyDrawingOne
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_2(TDO , PROJECTION);
+    int poly[8];
+    poly[0] = round(TDO[0][0])+SHIFT;    // 0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[2][0])+SHIFT;    //2
+    poly[3] = round(TDO[2][1])+SHIFT;
+
+    poly[4] = round(TDO[3][0])+SHIFT;    //3
+    poly[5] = round(TDO[3][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void DRAW_figureB_3(float HP[BN][BM], int COL){
+    float TDO[BN][BM]; // TecnicallyDrawingOne
+    for (int i = 0; i < BN; i++)
+    {
+        for (int j = 0; j < BM; j++)
+        {
+            TDO[i][j] = HP[i][j];
+        }
+    }
+    multing_2(TDO , PROJECTION);
+    int poly[8];
+    poly[0] = round(TDO[0][0])+SHIFT;    //0
+    poly[1] = round(TDO[0][1])+SHIFT;
+
+    poly[2] = round(TDO[1][0])+SHIFT;    //1
+    poly[3] = round(TDO[1][1])+SHIFT;
+
+    poly[4] = round(TDO[3][0])+SHIFT;    //3
+    poly[5] = round(TDO[3][1])+SHIFT;
+
+    poly[6] = poly[0];
+    poly[7] = poly[1];
+
+
+    setfillstyle(SOLID_FILL, COL);
+    setcolor(LIGHTGRAY);
+    setbkcolor(WHITE);
+    fillpoly(4,poly);
+
+    setcolor(BLACK);
+    setfillstyle(SOLID_FILL,WHITE);
+}
+
+void Painting_the_figures(float HPA[AN][AM], float HPB[BN][BM], float CAMxNRM_HP[1][9], float LGHxNRM_HP[1][9]){
+    cout << endl;
+    for (int i =0; i <9 ; i++){
+        cout << CAMxNRM_HP[0][i] << " ";
+    }
+    cout << endl;
+    if (CAMxNRM_HP[0][0]>0){
+            cout << "0 was painted" << endl;
+        if (LGHxNRM_HP[0][0] < 0  && SELFSHADOW ==1)  DRAW_figureA_0(HPA, 7);
+       else
+       DRAW_figureA_0(HPA, 13);
+    }
+
+    if (CAMxNRM_HP[0][1]>0){
+            cout << "1 was painted" << endl;
+        if (LGHxNRM_HP[0][1] < 0 && SELFSHADOW ==1) DRAW_figureA_1(HPA, 7);
+        else
+       DRAW_figureA_1(HPA, 9);
+    }
+
+    if (CAMxNRM_HP[0][2]>0){
+            cout << "2 was painted" << endl;
+        if (LGHxNRM_HP[0][2] < 0 && SELFSHADOW ==1) DRAW_figureA_2(HPA, 7);
+        else
+            DRAW_figureA_2(HPA, 10);
+    }
+
+    if (CAMxNRM_HP[0][3]>0){
+            cout << "3 was painted" << endl;
+        if (LGHxNRM_HP[0][3] < 0 && SELFSHADOW ==1) DRAW_figureA_3(HPA, 7);
+        else
+            DRAW_figureA_3(HPA, 11);
+    }
+
+    if (CAMxNRM_HP[0][4]>0){
+            cout << "4 was painted" << endl;
+        if (LGHxNRM_HP[0][4] < 0 && SELFSHADOW ==1) DRAW_figureA_4(HPA, 7);
+        else
+            DRAW_figureA_4(HPA, 12);
+    }
+
+    //
+
+}
+
+
+void Painting_the_figures_2(float HPA[AN][AM], float HPB[BN][BM], float CAMxNRM_HP[1][9], float LGHxNRM_HP[1][9]){
+
+    if (CAMxNRM_HP[0][5]>0){
+            cout << "5 was painted" << endl;
+        if (LGHxNRM_HP[0][5] < 0 && SELFSHADOW ==1) DRAW_figureB_0(HPB, 8);
+        else
+            DRAW_figureB_0(HPB, 5);
+    }
+    if (CAMxNRM_HP[0][6]>0){
+            cout << "6 was painted" << endl;
+        if (LGHxNRM_HP[0][6] < 0 && SELFSHADOW ==1) DRAW_figureB_1(HPB, 8);
+        else
+            DRAW_figureB_1(HPB, 4);
+    }
+    if (CAMxNRM_HP[0][7]>0){
+            cout << "7 was painted" << endl;
+        if (LGHxNRM_HP[0][7] < 0 && SELFSHADOW ==1) DRAW_figureB_2(HPB, 8);
+        else
+            DRAW_figureB_2(HPB, 1);
+    }
+    if (CAMxNRM_HP[0][8]>0){
+            cout << "8 was painted" << endl;
+
+        if (LGHxNRM_HP[0][8] < 0 && SELFSHADOW ==1) DRAW_figureB_3(HPB, 8);
+        else
+            DRAW_figureB_3(HPB, 2);
+    }
 }
 
 /*
